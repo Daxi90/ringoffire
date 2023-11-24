@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Game } from '../../models/game';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogAddPlayerComponent } from '../dialog-add-player/dialog-add-player.component';
+import { FirestoreConnectionService } from '../firestore-connection.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-game',
@@ -13,13 +15,27 @@ export class GameComponent implements OnInit {
   currentCard: string = '';
   game: Game;
 
-  constructor(public dialog: MatDialog) {
+
+  constructor(
+    public dialog: MatDialog,
+    private firestore:FirestoreConnectionService,
+    private route: ActivatedRoute
+    ) {
     this.game = new Game();
+    
+
   }
 
   ngOnInit(): void {
     this.newGame();
+    this.route.params.subscribe((params) =>{
+      console.log(params['id']);
+      
+    })
+    //this.firestore.addGame(this.game.toJson());
   }
+
+
 
   takeCard() {
     if (!this.pickCardAnimation) {

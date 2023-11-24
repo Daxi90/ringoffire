@@ -1,4 +1,5 @@
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
+import { FirestoreConnectionService } from '../firestore-connection.service';
 
 @Component({
   selector: 'app-game-info',
@@ -27,7 +28,9 @@ export class GameInfoComponent implements OnInit, OnChanges{
   description: string = "";
   @Input() card: string;
 
-  constructor(){}
+  constructor(
+    private firestore:FirestoreConnectionService
+  ){}
 
   ngOnInit(): void{
 
