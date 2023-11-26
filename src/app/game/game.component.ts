@@ -4,6 +4,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { DialogAddPlayerComponent } from '../dialog-add-player/dialog-add-player.component';
 import { FirestoreConnectionService } from '../firestore-connection.service';
 import { ActivatedRoute } from '@angular/router';
+import {
+  Firestore,
+  collectionData,
+  collection,
+  onSnapshot,
+  doc,
+  addDoc
+} from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-game',
@@ -14,32 +22,54 @@ export class GameComponent implements OnInit {
   pickCardAnimation = false;
   currentCard: string = '';
   game: Game;
+  gameId: string;
+
+  unsubSingleGame;
 
 
   constructor(
     public dialog: MatDialog,
     private firestore:FirestoreConnectionService,
     private route: ActivatedRoute
-    ) {
-    this.game = new Game();
-    
-
-  }
+    ) {}
 
   ngOnInit(): void {
     this.newGame();
     this.route.params.subscribe((params) =>{
-      console.log(params['id']);
-      
+      this.unsubSingleGame = this.subSingleGameList(params['id']);
+      this.gameId = params['id'];
+      console.log(this.gameId)
     })
-    //this.firestore.addGame(this.game.toJson());
+   
+  
+  }
+
+  ngOnDestroy(){
+    this.unsubSingleGame();
+  }
+
+  newGame() {
+    this.game = new Game();
   }
 
 
+  subSingleGameList(gameId) {
+    return onSnapshot(
+      this.firestore.getSingleGame(gameId),
+      (element:any) => {
+        let game = element.data();
+        this.game.currentPlayer = game.currentPlayer;
+        this.game.playedCards = game.playedCards;
+        this.game.players = game.players;
+        this.game.stack = game.stack;
+      }
+    );
+  }
 
   takeCard() {
     if (!this.pickCardAnimation) {
       this.currentCard = this.game.stack.pop();
+      this.firestore.updateGame(this.gameId, this.game.toJson());
 
       this.pickCardAnimation = true;
 
@@ -52,14 +82,13 @@ export class GameComponent implements OnInit {
 
       setTimeout(() => {
         this.game.playedCards.push(this.currentCard);
+        this.firestore.updateGame(this.gameId, this.game.toJson());
         this.pickCardAnimation = false;
       }, 1000);
     }
   }
 
-  newGame() {
-    console.log(this.game);
-  }
+
 
   openDialog(): void {
     const dialogRef = this.dialog.open(DialogAddPlayerComponent);
@@ -67,6 +96,7 @@ export class GameComponent implements OnInit {
     dialogRef.afterClosed().subscribe((name: string) => {
       if (name) {
         this.game.players.push(name);
+        this.firestore.updateGame(this.gameId, this.game.toJson());
       }
     });
   }

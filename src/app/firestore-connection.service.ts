@@ -5,7 +5,8 @@ import {
   collection,
   onSnapshot,
   doc,
-  addDoc
+  addDoc,
+  updateDoc
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Game } from '../interface/game';
@@ -23,17 +24,18 @@ export class FirestoreConnectionService {
 
   constructor() {
     this.unsubList = this.subGameList();
-    //this.unsubSingle = this.subSingleGameList();
   }
 
-async addGame(game: {}){
-  try {
-    const docRef = await addDoc(this.getGamesRef(), game);
-    console.log("Document written with ID: ", docRef.id);
-  } catch (err) {
-    console.log(err);
+  async addGame(game: {}): Promise<string> {
+    try {
+      const docRef = await addDoc(this.getGamesRef(), game);
+      return docRef.id; // Gib die ID des Dokuments zurück
+    } catch (err) {
+      console.log(err);
+      throw err; // Wirf den Fehler, um ihn im Component zu behandeln
+    }
   }
-}
+  
 
 
   subGameList() {
@@ -47,21 +49,25 @@ async addGame(game: {}){
 
   subSingleGameList(param) {
     return onSnapshot(
-      this.getSingleGame('games', param),
+      this.getSingleGame(param),
       (element) => {
-        console.log(element.data());
+        //console.log('Single loaded game', element.data());
       }
     );
   }
 
-  
 
+  async updateGame(param, gameObject){
+    await updateDoc(this.getSingleGame(param), gameObject)
+  }
+
+  
   getGamesRef() {
     return collection(this.firestore, 'games');
   }
 
-  getSingleGame(colId: string, docId: string) {
-    return doc(collection(this.firestore, colId), docId);
+  getSingleGame(param) {
+    return doc(collection(this.firestore, 'games'), param);
   }
 
   setGameObject(obj: any, id: string): Game {
